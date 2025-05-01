@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid()) // Primary key with UUID
+  username      String         @unique // Unique username
+  firstname     String // First name of the user
+  surname       String // Last name of the user
+  email         String         @unique // Unique email
+  avatar        String // URL to user's avatar
+  password      String
+  messages      Message[] // One-to-many relationship: A user can have many messages
+  conversations Conversation[] // Many-to-many relationship: A user can belong to multiple conversations
+  friends       User[]         @relation("Friendship") // Many-to-many relationship for friends
+  friendOf      User[]         @relation("Friendship") // Many-to-many relationship for friends (reverse direction)
+}
+
+model Message {
+  id             String   @id @default(uuid()) // Primary key with UUID
+  conversationId String // Foreign key to Conversation
+  senderId       String // Foreign key to User (sender of the message)
+  text           String? // The content of the message
+  image          String?
+  timestamp      DateTime @default(now()) // Timestamp when the message was sent
+
+  conversation Conversation @relation(fields: [conversationId], references: [id]) // Relation to Conversation model
+  sender       User         @relation(fields: [senderId], references: [id]) // Relation to User model
+}
+
+model Conversation {
+  id           String    @id @default(uuid()) // Primary key with UUID
+  name         String? // Name of the conversation (optional, for group chats)
+  isGroup      Boolean   @default(false) // Indicates whether this is a group chat
+  participants User[] // Many-to-many relationship: A conversation has multiple participants (users)
+  messages     Message[] // One-to-many relationship: A conversation contains many messages
+  createdAt    DateTime  @default(now()) // Timestamp when the conversation was created
+  updatedAt    DateTime  @updatedAt // Timestamp for the last update to the conversation
+}
